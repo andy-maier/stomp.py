@@ -118,7 +118,9 @@ class BaseTransport(stomp.listener.Publisher):
         """
         with self.__receiver_thread_exit_condition:
             while not self.__receiver_thread_exited and self.is_connected():
+                logging.debug("Waiting for receiver thread to exit (no timeout)")
                 self.__receiver_thread_exit_condition.wait()
+        logging.debug("Receiver thread exited")
 
     def is_connected(self):
         """
@@ -210,6 +212,7 @@ class BaseTransport(stomp.listener.Publisher):
                 self.__send_wait_condition.notify()
 
             if receipt_value == CMD_DISCONNECT:
+                logging.debug("Received receipt with disconnect command")
                 self.set_connected(False)
                 # received a stomp 1.1+ disconnect receipt
                 if receipt == self.__disconnect_receipt:
@@ -318,7 +321,9 @@ class BaseTransport(stomp.listener.Publisher):
             wait_time = None
         with self.__connect_wait_condition:
             while self.running and not self.is_connected() and not self.connection_error:
+                logging.debug("Waiting for connection with server (timeout %r)", wait_time)
                 self.__connect_wait_condition.wait(wait_time)
+        logging.debug("Connected with server")
         if not self.running or not self.is_connected():
             raise exception.ConnectFailedException()
 
@@ -605,6 +610,7 @@ class Transport(BaseTransport):
                 # Even though we don't want to use the socket, unwrap is the only API method which does a proper SSL
                 # shutdown
                 #
+                logging.debug("Issuing socket.unwrap() to close SSL socket")
                 try:
                     self.socket = self.socket.unwrap()
                 except Exception:
@@ -614,6 +620,7 @@ class Transport(BaseTransport):
                     _, e, _ = sys.exc_info()
                     logging.warning(e)
             elif hasattr(socket, "SHUT_RDWR"):
+                logging.debug("Issuing socket.shutdown() to close socket")
                 try:
                     self.socket.shutdown(socket.SHUT_RDWR)
                 except socket.error:
@@ -626,6 +633,7 @@ class Transport(BaseTransport):
         # split this into a separate check, because sometimes the socket is nulled between shutdown and this call
         #
         if self.socket is not None:
+            logging.debug("Issuing socket.close() to close socket")
             try:
                 self.socket.close()
             except socket.error:
@@ -670,6 +678,7 @@ class Transport(BaseTransport):
         Close the socket and clear the current host and port details.
         """
         try:
+            logging.debug("Issuing socket.close() to close socket")
             self.socket.close()
         except:
             pass  # ignore errors when attempting to close socket

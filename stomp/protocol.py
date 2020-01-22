@@ -134,6 +134,7 @@ class Protocol10(ConnectionListener):
         if not self.transport.is_connected():
             logging.debug("Not sending disconnect, already disconnected")
             return
+        logging.debug("Disconnecting from server")
         headers = utils.merge_headers([headers, keyword_headers])
         rec = receipt or utils.get_uuid()
         headers[HDR_RECEIPT] = rec
@@ -351,6 +352,7 @@ class Protocol11(HeartbeatListener, ConnectionListener):
         if not self.transport.is_connected():
             logging.debug("Not sending disconnect, already disconnected")
             return
+        logging.debug("Disconnecting from server")
         headers = utils.merge_headers([headers, keyword_headers])
         rec = receipt or utils.get_uuid()
         headers[HDR_RECEIPT] = rec
